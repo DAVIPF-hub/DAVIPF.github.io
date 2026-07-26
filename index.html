@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F4E79">
+<title>Financeiro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --azul: #1F4E79;
+    --azul-claro: #EAF1F8;
+    --verde: #2E9E6B;
+    --verde-bg: #C6E0B4;
+    --verde-txt: #1E7A4C;
+    --laranja-bg: #FCE4B4;
+    --laranja-txt: #B36B00;
+    --vermelho: #E4572E;
+    --vermelho-bg: #F8CBAD;
+    --vermelho-txt: #B33430;
+    --cinza-bg: #EEEEEE;
+    --cinza-txt: #8A94A6;
+    --borda: #E3E8EF;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #F7F9FC;
+    color: #333;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: 78px;
+    position: relative;
+  }
+  header.topbar {
+    background: var(--azul);
+    color: white;
+    padding: 16px 16px calc(16px + env(safe-area-inset-top, 0px));
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20;
+  }
+  header.topbar h1 { font-size: 17px; margin: 0; font-weight: 700; }
+  header.topbar button.icon-btn {
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    width: 34px; height: 34px; border-radius: 8px; font-size: 16px; cursor: pointer;
+  }
+
+  main { padding: 14px; }
+
+  .tela { display: none; }
+  .tela.active { display: block; }
+
+  label { display: block; font-weight: 700; color: #555; margin: 12px 0 4px; font-size: 12.5px; }
+  input, select {
+    width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
+    background: white;
+  }
+  .hint { font-size: 11px; color: var(--cinza-txt); margin-top: 4px; line-height: 1.4; }
+
+  button.principal {
+    margin-top: 16px; width: 100%; padding: 12px; background: var(--azul); color: white;
+    border: none; border-radius: 10px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button.principal:disabled { background: #999; }
+  button.secundario {
+    margin-top: 8px; width: 100%; padding: 10px; background: white; color: var(--azul);
+    border: 1.5px solid var(--azul); border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
+    max-width: 420px; width: calc(100% - 32px);
+    background: #222; color: white; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; text-align: center; display: none; z-index: 50;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #toast.ok { background: var(--verde-txt); }
+  #toast.erro { background: var(--vermelho-txt); }
+
+  nav.bottomnav {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 480px; margin: 0 auto;
+    background: white; border-top: 1px solid var(--borda);
+    display: flex; padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 20;
+  }
+  nav.bottomnav button {
+    flex: 1; background: none; border: none; padding: 10px 4px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: var(--cinza-txt); font-size: 10.5px; font-weight: 600; cursor: pointer;
+  }
+  nav.bottomnav button .emoji { font-size: 19px; }
+  nav.bottomnav button.active { color: var(--azul); }
+
+  .cards-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .card {
+    flex: 1; background: white; border-radius: 12px; padding: 10px 12px;
+    border: 1px solid var(--borda); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card .titulo { font-size: 10px; color: var(--cinza-txt); font-weight: 700; text-transform: uppercase; }
+  .card .valor { font-size: 16px; font-weight: 800; margin-top: 4px; }
+
+  .secao-titulo {
+    font-size: 13.5px; font-weight: 800; color: var(--azul); margin: 18px 0 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  select.seletor-mes {
+    width: auto; display: inline-block; font-weight: 700; color: var(--azul);
+    background: var(--azul-claro); border: 1.5px solid var(--azul); margin-bottom: 12px;
+  }
+
+  table.tabela-app { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; }
+  table.tabela-app th {
+    background: var(--azul); color: white; padding: 6px 5px; font-size: 10.5px; text-align: left;
+  }
+  table.tabela-app td { padding: 6px 5px; border-bottom: 1px solid var(--borda); }
+  table.tabela-app tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 10px; }
+  .badge.ultrapassou, .badge.abaixo { background: var(--vermelho-bg); color: var(--vermelho-txt); }
+  .badge.atencao, .badge.progresso { background: var(--laranja-bg); color: var(--laranja-txt); }
+  .badge.dentro, .badge.atingida { background: var(--verde-bg); color: var(--verde-txt); }
+  .badge.sem { background: var(--cinza-bg); color: var(--cinza-txt); }
+
+  .dica-item {
+    background: white; border: 1px solid var(--borda); border-radius: 10px;
+    padding: 9px 11px; font-size: 12px; margin-bottom: 6px; line-height: 1.4;
+  }
+
+  .lista-item {
+    background: white; border: 1px solid var(--borda); border-radius: 10px;
+    padding: 9px 11px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .lista-item .info .principal { font-weight: 700; font-size: 12.5px; }
+  .lista-item .info .secundario { color: var(--cinza-txt); font-size: 11px; }
+  .lista-item .valor { font-weight: 800; color: var(--azul); font-size: 12.5px; white-space: nowrap; }
+
+  .vazio { text-align: center; color: #aaa; font-style: italic; padding: 18px 0; font-size: 12.5px; }
+
+  #tela-setup { padding: 30px 20px; }
+  #tela-setup h2 { color: var(--azul); }
+  #tela-setup .logo { font-size: 40px; text-align: center; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ CONFIGURAÇÃO INICIAL ============ -->
+  <div class="tela active" id="tela-setup">
+    <div class="logo">💰</div>
+    <h2 style="text-align:center;">Financeiro</h2>
+    <p class="hint" style="text-align:center; font-size:12.5px;">
+      Conecte este app à sua planilha do Google Sheets. Você precisa da URL do "App da Web" e do token,
+      gerados no editor de Apps Script (função <code>configurarTokenApp</code> + Implantar &gt; Nova implantação).
+    </p>
+    <label>URL do App da Web</label>
+    <input type="text" id="setup-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+    <label>Token</label>
+    <input type="text" id="setup-token" placeholder="Cole o token aqui">
+    <div id="setup-erro" class="hint" style="color:var(--vermelho-txt); display:none;"></div>
+    <button class="principal" id="btn-setup-salvar">Conectar</button>
+  </div>
+
+  <!-- ============ APP PRINCIPAL ============ -->
+  <div class="tela" id="tela-app-shell">
+    <header class="topbar">
+      <h1>💰 Financeiro</h1>
+      <button class="icon-btn" id="btn-ajustes">⚙️</button>
+    </header>
+
+    <main>
+      <!-- INÍCIO -->
+      <div class="tela active" id="tab-inicio">
+        <select class="seletor-mes" id="select-mes-despesa"></select>
+
+        <div class="cards-row">
+          <div class="card"><div class="titulo">Receitas</div><div class="valor" id="card-receitas" style="color:var(--verde);">R$ 0,00</div></div>
+          <div class="card"><div class="titulo">Despesas</div><div class="valor" id="card-despesas" style="color:var(--vermelho);">R$ 0,00</div></div>
+          <div class="card"><div class="titulo">Saldo</div><div class="valor" id="card-saldo">R$ 0,00</div></div>
+        </div>
+
+        <div class="secao-titulo">🎯 Orçamento por tipo</div>
+        <table class="tabela-app" id="tabela-orcamento" style="display:none;">
+          <thead><tr><th>Tipo</th><th>Gasto</th><th>Orçado</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="vazio" id="orcamento-vazio">Nenhum tipo com gasto este mês.</div>
+
+        <div class="secao-titulo">💡 Dicas de economia</div>
+        <div id="lista-dicas"></div>
+
+        <div class="secao-titulo">📈 Investimentos</div>
+        <select class="seletor-mes" id="select-mes-invest"></select>
+        <div class="cards-row">
+          <div class="card"><div class="titulo">Aportes</div><div class="valor" id="card-aportes" style="color:var(--verde);">R$ 0,00</div></div>
+          <div class="card"><div class="titulo">Meta</div><div class="valor" id="card-meta-invest">R$ 0,00</div></div>
+          <div class="card"><div class="titulo">Acumulado</div><div class="valor" id="card-acumulado">R$ 0,00</div></div>
+        </div>
+
+        <div class="secao-titulo">Por tipo</div>
+        <table class="tabela-app" id="tabela-invest-tipo" style="display:none;">
+          <thead><tr><th>Tipo</th><th>Aporte</th><th>Meta</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="vazio" id="invest-tipo-vazio">Nenhum aporte este mês.</div>
+
+        <div class="secao-titulo">Por banco</div>
+        <table class="tabela-app" id="tabela-invest-banco" style="display:none;">
+          <thead><tr><th>Banco</th><th>Aporte</th><th>Meta</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="vazio" id="invest-banco-vazio">Nenhum aporte este mês.</div>
+      </div>
+
+      <!-- LANÇAR DESPESA -->
+      <div class="tela" id="tab-despesa">
+        <div class="secao-titulo">➕ Lançar despesa</div>
+        <label>Mês/Ano</label>
+        <input type="month" id="d-mesAno">
+        <label>Descrição</label>
+        <input type="text" id="d-desc" placeholder="Ex: Cartão Nubank">
+        <label>Tipo</label>
+        <input type="text" id="d-tipo" list="dl-tipos-despesa" placeholder="Ex: Cartão, Boleto...">
+        <datalist id="dl-tipos-despesa"></datalist>
+        <label>Banco</label>
+        <input type="text" id="d-banco" list="dl-bancos-despesa" placeholder="Ex: Nubank, Itaú...">
+        <datalist id="dl-bancos-despesa"></datalist>
+        <label>Valor total (R$)</label>
+        <input type="number" id="d-valor" step="0.01" placeholder="0,00">
+        <label>Parcelas</label>
+        <input type="number" id="d-parcelas" min="1" value="1">
+        <div class="hint">Se parcelado, o valor é dividido automaticamente entre os meses seguintes.</div>
+        <button class="principal" id="btn-salvar-despesa">Lançar despesa</button>
+      </div>
+
+      <!-- LANÇAR INVESTIMENTO -->
+      <div class="tela" id="tab-investimento">
+        <div class="secao-titulo">📈 Lançar aporte</div>
+        <label>Mês/Ano</label>
+        <input type="month" id="i-mesAno">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="i-desc" placeholder="Ex: Aporte mensal">
+        <label>Tipo de investimento</label>
+        <input type="text" id="i-tipo" list="dl-tipos-invest" placeholder="Ex: Reserva de Emergência">
+        <datalist id="dl-tipos-invest"></datalist>
+        <label>Banco / Corretora</label>
+        <input type="text" id="i-banco" list="dl-bancos-invest" placeholder="Ex: Nubank Invest">
+        <datalist id="dl-bancos-invest"></datalist>
+        <label>Valor (R$)</label>
+        <input type="number" id="i-valor" step="0.01" placeholder="0,00">
+        <button class="principal" id="btn-salvar-invest">Lançar aporte</button>
+      </div>
+
+      <!-- AJUSTES -->
+      <div class="tela" id="tab-ajustes">
+        <div class="secao-titulo">⚙️ Ajustes</div>
+        <label>URL do App da Web</label>
+        <input type="text" id="aj-url">
+        <label>Token</label>
+        <input type="text" id="aj-token">
+        <button class="principal" id="btn-salvar-ajustes">Salvar</button>
+        <button class="secundario" id="btn-atualizar-planilha">🔄 Atualizar dados agora</button>
+        <button class="secundario" id="btn-desconectar" style="color:var(--vermelho-txt); border-color:var(--vermelho-txt);">Desconectar app</button>
+      </div>
+    </main>
+
+    <nav class="bottomnav">
+      <button data-tab="inicio" class="active"><span class="emoji">🏠</span>Início</button>
+      <button data-tab="despesa"><span class="emoji">➕</span>Despesa</button>
+      <button data-tab="investimento"><span class="emoji">📈</span>Investir</button>
+      <button data-tab="ajustes"><span class="emoji">⚙️</span>Ajustes</button>
+    </nav>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'financeiro_app_config';
+
+function getConfig() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function setConfig(cfg) { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); }
+function limparConfig() { localStorage.removeItem(STORAGE_KEY); }
+
+function formatarMoeda(valor) {
+  return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatarPct(valor) {
+  if (valor === null || valor === undefined || valor === '') return '-';
+  return Math.round(valor * 100) + '%';
+}
+function escapeHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto == null ? '' : texto;
+  return div.innerHTML;
+}
+function mesAnoParaInputMonth(mesAno) {
+  // "AGO/2026" -> "2026-08"
+  const MESES = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  if (!mesAno) return '';
+  const [mes, ano] = mesAno.split('/');
+  const idx = MESES.indexOf(mes);
+  if (idx < 0) return '';
+  return ano + '-' + String(idx + 1).padStart(2, '0');
+}
+function inputMonthParaMesAno(valorInput) {
+  const MESES = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const [ano, mes] = valorInput.split('-');
+  return MESES[parseInt(mes, 10) - 1] + '/' + ano;
+}
+
+function mostrarToast(texto, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = texto;
+  el.className = tipo || '';
+  el.style.display = 'block';
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+async function apiGet(action, params) {
+  const cfg = getConfig();
+  if (!cfg) throw new Error('App não configurado.');
+  const url = new URL(cfg.url);
+  url.searchParams.set('action', action);
+  url.searchParams.set('token', cfg.token);
+  Object.entries(params || {}).forEach(([k, v]) => {
+    if (v !== null && v !== undefined && v !== '') url.searchParams.set(k, v);
+  });
+  const resp = await fetch(url.toString());
+  const data = await resp.json();
+  if (!data.ok) throw new Error(data.error || 'Erro desconhecido.');
+  return data;
+}
+
+async function apiPost(action, payload) {
+  const cfg = getConfig();
+  if (!cfg) throw new Error('App não configurado.');
+  const resp = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: cfg.token, action, payload: payload || {} })
+  });
+  const data = await resp.json();
+  if (!data.ok) throw new Error(data.error || 'Erro desconhecido.');
+  return data;
+}
+
+// ===================================================
+// NAVEGAÇÃO
+// ===================================================
+function mostrarTab(nome) {
+  document.querySelectorAll('#tela-app-shell > main > .tela').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + nome).classList.add('active');
+  document.querySelectorAll('nav.bottomnav button').forEach(b => b.classList.toggle('active', b.dataset.tab === nome));
+  if (nome === 'inicio') carregarInicio();
+  if (nome === 'despesa') carregarSugestoesDespesaForm();
+  if (nome === 'investimento') carregarSugestoesInvestForm();
+}
+
+document.querySelectorAll('nav.bottomnav button').forEach(btn => {
+  btn.addEventListener('click', () => mostrarTab(btn.dataset.tab));
+});
+document.getElementById('btn-ajustes').addEventListener('click', () => mostrarTab('ajustes'));
+
+// ===================================================
+// SETUP INICIAL
+// ===================================================
+document.getElementById('btn-setup-salvar').addEventListener('click', async () => {
+  const url = document.getElementById('setup-url').value.trim();
+  const token = document.getElementById('setup-token').value.trim();
+  const erroEl = document.getElementById('setup-erro');
+  erroEl.style.display = 'none';
+
+  if (!url || !token) {
+    erroEl.textContent = 'Preencha a URL e o token.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  setConfig({ url, token });
+  try {
+    await apiGet('mesesDespesa', {});
+    iniciarApp();
+  } catch (e) {
+    erroEl.textContent = 'Não consegui conectar: ' + e.message;
+    erroEl.style.display = 'block';
+    limparConfig();
+  }
+});
+
+function iniciarApp() {
+  document.getElementById('tela-setup').classList.remove('active');
+  document.getElementById('tela-app-shell').classList.add('active');
+  mostrarTab('inicio');
+}
+
+// ===================================================
+// AJUSTES
+// ===================================================
+document.getElementById('btn-salvar-ajustes').addEventListener('click', () => {
+  const url = document.getElementById('aj-url').value.trim();
+  const token = document.getElementById('aj-token').value.trim();
+  if (!url || !token) { mostrarToast('Preencha URL e token.', 'erro'); return; }
+  setConfig({ url, token });
+  mostrarToast('Configuração salva!', 'ok');
+});
+
+document.getElementById('btn-desconectar').addEventListener('click', () => {
+  if (!confirm('Desconectar este app da planilha? Você vai precisar colar a URL e o token de novo.')) return;
+  limparConfig();
+  location.reload();
+});
+
+document.getElementById('btn-atualizar-planilha').addEventListener('click', async (ev) => {
+  const btn = ev.target;
+  btn.disabled = true;
+  btn.textContent = 'Atualizando...';
+  try {
+    const resp = await apiPost('atualizarAgora', {});
+    mostrarToast(resp.mensagem || 'Atualizado!', 'ok');
+  } catch (e) {
+    mostrarToast('Erro: ' + e.message, 'erro');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Atualizar dados agora';
+  }
+});
+
+// ===================================================
+// TELA INÍCIO
+// ===================================================
+async function carregarInicio() {
+  try {
+    const cfgResumo = await apiGet('resumoMes', {});
+    preencherResumoDespesas(cfgResumo);
+
+    const selectMes = document.getElementById('select-mes-despesa');
+    selectMes.innerHTML = '';
+    (cfgResumo.mesesDisponiveis || []).slice().reverse().forEach(mes => {
+      const opt = document.createElement('option');
+      opt.value = mes; opt.textContent = mes;
+      if (mes === cfgResumo.mesSelecionado) opt.selected = true;
+      selectMes.appendChild(opt);
+    });
+    selectMes.onchange = async () => {
+      const resp = await apiGet('resumoMes', { mes: selectMes.value });
+      preencherResumoDespesas(resp);
+    };
+  } catch (e) {
+    mostrarToast('Erro ao carregar: ' + e.message, 'erro');
+  }
+
+  try {
+    const resumoInvest = await apiGet('resumoInvestimentos', {});
+    preencherResumoInvestimentos(resumoInvest);
+
+    const selectMesInv = document.getElementById('select-mes-invest');
+    selectMesInv.innerHTML = '';
+    (resumoInvest.mesesDisponiveis || []).slice().reverse().forEach(mes => {
+      const opt = document.createElement('option');
+      opt.value = mes; opt.textContent = mes;
+      if (mes === resumoInvest.mesSelecionado) opt.selected = true;
+      selectMesInv.appendChild(opt);
+    });
+    selectMesInv.onchange = async () => {
+      const resp = await apiGet('resumoInvestimentos', { mes: selectMesInv.value });
+      preencherResumoInvestimentos(resp);
+    };
+  } catch (e) {
+    mostrarToast('Erro ao carregar investimentos: ' + e.message, 'erro');
+  }
+}
+
+function classeBadge(status) {
+  const mapa = {
+    'Ultrapassou': 'ultrapassou', 'Atenção': 'atencao', 'Dentro do orçamento': 'dentro', 'Sem orçamento': 'sem',
+    'Meta atingida': 'atingida', 'Em progresso': 'progresso', 'Abaixo da meta': 'abaixo', 'Sem meta': 'sem'
+  };
+  return mapa[status] || 'sem';
+}
+
+function preencherResumoDespesas(resp) {
+  document.getElementById('card-receitas').textContent = formatarMoeda(resp.cards ? resp.cards.receitas : 0);
+  document.getElementById('card-despesas').textContent = formatarMoeda(resp.cards ? resp.cards.despesas : 0);
+  const saldoEl = document.getElementById('card-saldo');
+  const saldo = resp.cards ? resp.cards.saldo : 0;
+  saldoEl.textContent = formatarMoeda(saldo);
+  saldoEl.style.color = saldo >= 0 ? 'var(--azul)' : 'var(--vermelho)';
+
+  const tabela = document.getElementById('tabela-orcamento');
+  const tbody = tabela.querySelector('tbody');
+  const vazio = document.getElementById('orcamento-vazio');
+  tbody.innerHTML = '';
+  const linhas = resp.orcamentoPorTipo || [];
+  if (linhas.length === 0) {
+    tabela.style.display = 'none'; vazio.style.display = 'block';
+  } else {
+    tabela.style.display = 'table'; vazio.style.display = 'none';
+    linhas.forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + escapeHtml(l.tipo) + '</td>' +
+        '<td>' + formatarMoeda(l.gasto) + '</td>' +
+        '<td>' + (l.orcado > 0 ? formatarMoeda(l.orcado) : '-') + '</td>' +
+        '<td><span class="badge ' + classeBadge(l.status) + '">' + escapeHtml(l.status) + '</span></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  const listaDicas = document.getElementById('lista-dicas');
+  listaDicas.innerHTML = '';
+  (resp.dicas || []).forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'dica-item';
+    div.textContent = d;
+    listaDicas.appendChild(div);
+  });
+}
+
+function preencherResumoInvestimentos(resp) {
+  document.getElementById('card-aportes').textContent = formatarMoeda(resp.cards ? resp.cards.aporteMes : 0);
+  document.getElementById('card-meta-invest').textContent = formatarMoeda(resp.cards ? resp.cards.metaMesTotal : 0);
+  document.getElementById('card-acumulado').textContent = formatarMoeda(resp.cards ? resp.cards.acumuladoGeral : 0);
+
+  preencherTabelaInvest('tabela-invest-tipo', 'invest-tipo-vazio', resp.porTipo || [], 'nome');
+  preencherTabelaInvest('tabela-invest-banco', 'invest-banco-vazio', resp.porBanco || [], 'nome');
+}
+
+function preencherTabelaInvest(idTabela, idVazio, linhas, campoNome) {
+  const tabela = document.getElementById(idTabela);
+  const tbody = tabela.querySelector('tbody');
+  const vazio = document.getElementById(idVazio);
+  tbody.innerHTML = '';
+  if (linhas.length === 0) {
+    tabela.style.display = 'none'; vazio.style.display = 'block';
+    return;
+  }
+  tabela.style.display = 'table'; vazio.style.display = 'none';
+  linhas.forEach(l => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + escapeHtml(l[campoNome]) + '</td>' +
+      '<td>' + formatarMoeda(l.aportado) + '</td>' +
+      '<td>' + (l.meta > 0 ? formatarMoeda(l.meta) : '-') + '</td>' +
+      '<td><span class="badge ' + classeBadge(l.status) + '">' + escapeHtml(l.status) + '</span></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ===================================================
+// FORM DESPESA
+// ===================================================
+async function carregarSugestoesDespesaForm() {
+  try {
+    const resp = await apiGet('sugestoesDespesa', {});
+    const dlTipos = document.getElementById('dl-tipos-despesa');
+    const dlBancos = document.getElementById('dl-bancos-despesa');
+    dlTipos.innerHTML = '';
+    (resp.tipos || []).forEach(t => { const o = document.createElement('option'); o.value = t; dlTipos.appendChild(o); });
+    dlBancos.innerHTML = '';
+    (resp.bancos || []).forEach(b => { const o = document.createElement('option'); o.value = b; dlBancos.appendChild(o); });
+  } catch (e) { /* silencioso — não trava o formulário */ }
+}
+
+document.getElementById('btn-salvar-despesa').addEventListener('click', async (ev) => {
+  const btn = ev.target;
+  const mesAnoInput = document.getElementById('d-mesAno').value;
+  const desc = document.getElementById('d-desc').value.trim();
+  const tipo = document.getElementById('d-tipo').value.trim();
+  const banco = document.getElementById('d-banco').value.trim();
+  const valor = document.getElementById('d-valor').value;
+  const parcelas = document.getElementById('d-parcelas').value || 1;
+
+  if (!mesAnoInput || !desc || !valor) {
+    mostrarToast('Preencha Mês/Ano, Descrição e Valor.', 'erro');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const resp = await apiPost('lancarDespesa', {
+      mesAno: inputMonthParaMesAno(mesAnoInput), desc, tipo, banco, valor, parcelas
+    });
+    mostrarToast(resp.mensagem, 'ok');
+    document.getElementById('d-desc').value = '';
+    document.getElementById('d-tipo').value = '';
+    document.getElementById('d-banco').value = '';
+    document.getElementById('d-valor').value = '';
+    document.getElementById('d-parcelas').value = 1;
+  } catch (e) {
+    mostrarToast('Erro: ' + e.message, 'erro');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Lançar despesa';
+  }
+});
+
+// ===================================================
+// FORM INVESTIMENTO
+// ===================================================
+async function carregarSugestoesInvestForm() {
+  try {
+    const resp = await apiGet('sugestoesInvestimento', {});
+    const dlTipos = document.getElementById('dl-tipos-invest');
+    const dlBancos = document.getElementById('dl-bancos-invest');
+    dlTipos.innerHTML = '';
+    (resp.tipos || []).forEach(t => { const o = document.createElement('option'); o.value = t; dlTipos.appendChild(o); });
+    dlBancos.innerHTML = '';
+    (resp.bancos || []).forEach(b => { const o = document.createElement('option'); o.value = b; dlBancos.appendChild(o); });
+  } catch (e) { /* silencioso */ }
+}
+
+document.getElementById('btn-salvar-invest').addEventListener('click', async (ev) => {
+  const btn = ev.target;
+  const mesAnoInput = document.getElementById('i-mesAno').value;
+  const desc = document.getElementById('i-desc').value.trim();
+  const tipo = document.getElementById('i-tipo').value.trim();
+  const banco = document.getElementById('i-banco').value.trim();
+  const valor = document.getElementById('i-valor').value;
+
+  if (!mesAnoInput || !tipo || !banco || !valor) {
+    mostrarToast('Preencha Mês/Ano, Tipo, Banco e Valor.', 'erro');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const resp = await apiPost('lancarInvestimento', {
+      mesAno: inputMonthParaMesAno(mesAnoInput), desc, tipo, banco, valor
+    });
+    mostrarToast(resp.mensagem, 'ok');
+    document.getElementById('i-desc').value = '';
+    document.getElementById('i-tipo').value = '';
+    document.getElementById('i-banco').value = '';
+    document.getElementById('i-valor').value = '';
+  } catch (e) {
+    mostrarToast('Erro: ' + e.message, 'erro');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Lançar aporte';
+  }
+});
+
+// ===================================================
+// INICIALIZAÇÃO
+// ===================================================
+(function init() {
+  const cfg = getConfig();
+  if (cfg) {
+    document.getElementById('aj-url').value = cfg.url;
+    document.getElementById('aj-token').value = cfg.token;
+    iniciarApp();
+  }
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
