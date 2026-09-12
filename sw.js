@@ -37,7 +37,9 @@ self.addEventListener("fetch", (event) => {
   const ehPaginaPrincipal =
     event.request.mode === "navigate" ||
     url.pathname.endsWith("/") ||
-    url.pathname.endsWith("index.html");
+    url.pathname.endsWith("index.html") ||
+    // O config.js muda quando você ajusta chaves/preços — nunca pode ficar preso no cache
+    url.pathname.endsWith("config.js");
 
   if (ehPaginaPrincipal) {
     event.respondWith(
